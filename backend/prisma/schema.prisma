@@ -1,0 +1,54 @@
+// backend/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Para o Login e Gerenciamento
+model User {
+  id       String @id @default(uuid())
+  email    String @unique
+  password String
+  name     String
+}
+
+// As Reuniões
+model Meeting {
+  id          String   @id @default(uuid())
+  title       String   // Nome da reunião
+  description String?  // Notas/Descrição
+  startTime   DateTime // Data e hora de início
+  endTime     DateTime // Data e hora de término
+  sectorId    String
+  sector      Sector   @relation(fields: [sectorId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Setores/Tags de cores (Configurações)
+model Sector {
+  id        String    @id @default(uuid())
+  name      String    // Ex: TI, RH, Diretoria
+  color     String    // Código Hex da cor (ex: #0000FF)
+  meetings  Meeting[]
+}
+
+// Configurações Globais
+model Settings {
+  id           Int    @id @default(1) // Teremos apenas uma linha de config
+  companyLogo  String? // Path da imagem ou Base64
+  primaryColor String @default("#0057FF") // A cor azul que você quer editar
+  footerText   String @default("Todos os direitos reservados")
+}
+
+// Bloco de Notas da Home
+model DailyNote {
+  id        String   @id @default(uuid())
+  content   String   @db.Text
+  date      DateTime @unique @default(now())
+}
