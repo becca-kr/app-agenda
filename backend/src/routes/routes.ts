@@ -14,5 +14,7 @@ routes.get('/sectors', listSectors);
 // Reuniões
 routes.get('/meetings', MeetingController.list);
 routes.post('/meetings', MeetingController.create);
+routes.put('/meetings/:id', MeetingController.update);
+routes.delete('/meetings/:id', MeetingController.delete);
 
 export default routes;

@@ -43,5 +43,47 @@ export const MeetingController = {
     } catch (error) {
       return res.status(500).json({ error: 'Erro ao agendar reunião' });
     }
+  },
+
+  // Atualizar reunião (Editar - Imagem 4)
+  async update(req: Request, res: Response) {
+  try {
+    const id = req.params.id as string;
+    const { title, description, startTime, endTime, sectorId } = req.body;
+
+    const data: any = {
+      title,
+      description,
+      sectorId
+    };
+
+    if (startTime) data.startTime = new Date(startTime);
+    if (endTime) data.endTime = new Date(endTime);
+
+    const meeting = await prisma.meeting.update({
+      where: { id },
+      data
+    });
+
+    return res.json(meeting);
+
+  } catch (error) {
+    return res.status(500).json({ error: 'Erro ao atualizar reunião' });
+  }
+  },
+
+  // Cancelar reunião (Excluir)
+  async delete(req: Request, res: Response) {
+    try {
+      const id = req.params.id as string;
+      
+      await prisma.meeting.delete({
+        where: { id }
+      });
+
+      return res.status(204).send();
+    } catch (error) {
+      return res.status(500).json({ error: 'Erro ao excluir reunião' });
+    }
   }
 };
