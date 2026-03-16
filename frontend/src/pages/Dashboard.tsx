@@ -1,6 +1,7 @@
 import React from 'react';
 import { useConfig } from '../context/ConfigContext';
 import { DailyNotes } from '../components/DailyNotes';
+import { WeeklyCalendar } from '../components/WeeklyCalendar';
 import { Plus, Calendar as CalendarIcon } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
@@ -50,7 +51,9 @@ export const Dashboard: React.FC = () => {
           </div>
           <div className="flex-1 p-4 bg-gray-50/50">
             {/* Grid da Agenda */}
-            <p className="text-center text-gray-400 mt-20">Grade de horários em construção...</p>
+            <div className="flex-1 bg-gray-50/50">
+              <WeeklyCalendar />
+            </div>
           </div>
         </div>
       </main>
