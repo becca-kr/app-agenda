@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 const DAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const HOURS = Array.from({ length: 11 }, (_, i) => i + 8); 
+
 interface Meeting {
   id: string;
   title: string;
@@ -13,9 +14,10 @@ interface Meeting {
 interface WeeklyCalendarProps {
   meetings: Meeting[];
   onCellClick: (date: Date) => void;
+  currentMonday: Date; 
 }
 
-export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ meetings, onCellClick }) => {
+export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ meetings, onCellClick, currentMonday }) => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
   useEffect(() => {
@@ -41,7 +43,6 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ meetings, onCell
 
   return (
     <div className="flex flex-col h-full bg-white text-sm">
-      {/* Cabeçalho */}
       <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-7'} border-b bg-gray-50`}>
         <div className="p-3 border-r text-center font-bold text-gray-400">HORA</div>
         {visibleDays.map(day => (
@@ -51,20 +52,21 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ meetings, onCell
         ))}
       </div>
 
-      {/* Grade */}
       <div className="flex-1 flex flex-col">
         {HOURS.map(hour => (
           <div key={hour} className={`flex-1 grid ${isMobile ? 'grid-cols-2' : 'grid-cols-7'} border-b`}>
             
-            {/* Coluna da Hora */}
             <div className="border-r bg-gray-50 flex items-center justify-center font-medium text-gray-500 text-xs sm:text-sm">
               {hour}:00
             </div>
             
-            {/* Células dos Dias */}
             {visibleDays.map((day) => {
               const meeting = getMeetingAt(day.originalIndex, hour);
               
+              const cellDate = new Date(currentMonday);
+              cellDate.setDate(cellDate.getDate() + day.originalIndex);
+              cellDate.setHours(hour, 0, 0, 0);
+
               return (
                 <div key={day.name} className="border-r last:border-r-0 p-1 relative group">
                   {meeting ? (
@@ -78,11 +80,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ meetings, onCell
                     </div>
                   ) : (
                     <button
-                      onClick={() => {
-                        const date = new Date();
-                        date.setHours(hour, 0, 0, 0);
-                        onCellClick(date);
-                      }}
+                      onClick={() => onCellClick(cellDate)}
                       className="w-full h-full hover:bg-gray-50 transition-colors rounded-md"
                     />
                   )}

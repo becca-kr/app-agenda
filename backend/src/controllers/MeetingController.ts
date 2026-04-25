@@ -4,10 +4,28 @@ import { prisma } from '../lib/prisma.js';
 export const MeetingController = {
   async list(req: Request, res: Response) {
     try {
+      const { start, end } = req.query;
+
+      const where: any = {};
+
+      if (start || end) {
+        where.startTime = {};
+
+        if (start) {
+          where.startTime.gte = new Date(start as string);
+        }
+
+        if (end) {
+          where.startTime.lte = new Date(end as string);
+        }
+      }
+
       const meetings = await prisma.meeting.findMany({
+        where,
         include: { sector: true },
         orderBy: { startTime: 'asc' }
       });
+
       return res.json(meetings);
     } catch (error) {
       return res.status(500).json({ error: 'Erro ao buscar reuniões' });
@@ -18,6 +36,7 @@ export const MeetingController = {
   async create(req: Request, res: Response) {
     try {
       const { title, description, startTime, endTime, sectorId } = req.body;
+
       const conflict = await prisma.meeting.findFirst({
         where: {
           startTime: { lt: new Date(endTime) },
@@ -45,38 +64,44 @@ export const MeetingController = {
     }
   },
 
-  // Atualizar reunião (Editar - Imagem 4)
+  // Atualizar reunião
   async update(req: Request, res: Response) {
-  try {
-    const id = req.params.id as string;
-    const { title, description, startTime, endTime, sectorId } = req.body;
+    try {
+      const id = req.params.id as string;
+      const { title, description, startTime, endTime, sectorId } = req.body;
 
-    const data: any = {
-      title,
-      description,
-      sectorId
-    };
+      const data: Partial<{
+        title: string;
+        description: string;
+        startTime: Date;
+        endTime: Date;
+        sectorId: string;
+      }> = {
+        title,
+        description,
+        sectorId
+      };
 
-    if (startTime) data.startTime = new Date(startTime);
-    if (endTime) data.endTime = new Date(endTime);
+      if (startTime) data.startTime = new Date(startTime);
+      if (endTime) data.endTime = new Date(endTime);
 
-    const meeting = await prisma.meeting.update({
-      where: { id },
-      data
-    });
+      const meeting = await prisma.meeting.update({
+        where: { id },
+        data
+      });
 
-    return res.json(meeting);
+      return res.json(meeting);
 
-  } catch (error) {
-    return res.status(500).json({ error: 'Erro ao atualizar reunião' });
-  }
+    } catch (error) {
+      return res.status(500).json({ error: 'Erro ao atualizar reunião' });
+    }
   },
 
-  // Cancelar reunião (Excluir)
+  // Excluir reunião
   async delete(req: Request, res: Response) {
     try {
       const id = req.params.id as string;
-      
+
       await prisma.meeting.delete({
         where: { id }
       });
