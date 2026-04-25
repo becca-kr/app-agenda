@@ -1,9 +1,22 @@
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 async function main() {
   console.log('🌱 Iniciando seed...')
+
+  const hashedPassword = await bcrypt.hash('admin123', 10)
+  
+  await prisma.user.upsert({
+    where: { email: 'admin@empresa.com' },
+    update: {},
+    create: {
+      email: 'admin@empresa.com',
+      name: 'Administrador',
+      password: hashedPassword,
+    },
+  })
 
   await prisma.sector.upsert({
     where: { id: '1' },
@@ -35,9 +48,14 @@ async function main() {
     }
   })
 
-  console.log('✅ Seed finalizado!')
+  console.log('✅ Banco populado com sucesso (Incluindo Usuário Admin)!')
 }
 
 main()
-  .catch(console.error)
-  .finally(() => prisma.$disconnect())
+  .catch((e) => {
+    console.error(e)
+    process.exit(1)
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })
