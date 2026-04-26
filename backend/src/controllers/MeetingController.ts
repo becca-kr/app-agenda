@@ -35,7 +35,7 @@ export const MeetingController = {
   // Criar nova reunião
   async create(req: Request, res: Response) {
     try {
-      const { title, description, startTime, endTime, sectorId } = req.body;
+      const { title, description, startTime, endTime, sectorId, canceled } = req.body;
 
       const conflict = await prisma.meeting.findFirst({
         where: {
@@ -54,7 +54,8 @@ export const MeetingController = {
           description,
           startTime: new Date(startTime),
           endTime: new Date(endTime),
-          sectorId
+          sectorId,
+          canceled: canceled || false
         }
       });
 
@@ -68,7 +69,7 @@ export const MeetingController = {
   async update(req: Request, res: Response) {
     try {
       const id = req.params.id as string;
-      const { title, description, startTime, endTime, sectorId } = req.body;
+      const { title, description, startTime, endTime, sectorId, canceled } = req.body;
 
       const data: Partial<{
         title: string;
@@ -76,10 +77,12 @@ export const MeetingController = {
         startTime: Date;
         endTime: Date;
         sectorId: string;
+        canceled: boolean;
       }> = {
         title,
         description,
-        sectorId
+        sectorId,
+        canceled
       };
 
       if (startTime) data.startTime = new Date(startTime);
@@ -87,7 +90,7 @@ export const MeetingController = {
 
       const meeting = await prisma.meeting.update({
         where: { id },
-        data
+        data: { title, startTime, endTime, sectorId, canceled }
       });
 
       return res.json(meeting);

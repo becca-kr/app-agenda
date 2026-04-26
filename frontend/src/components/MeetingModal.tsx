@@ -24,7 +24,7 @@ export const MeetingModal: React.FC<MeetingModalProps> = ({ isOpen, onClose, sel
   const [meetingDate, setMeetingDate] = useState('');
   const [startHour, setStartHour] = useState('');
   const [endHour, setEndHour] = useState('');
-  
+  const [isCanceled, setIsCanceled] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false); 
 
@@ -43,6 +43,7 @@ export const MeetingModal: React.FC<MeetingModalProps> = ({ isOpen, onClose, sel
     if (existingMeeting) {
       setTitle(existingMeeting.title);
       setSectorId(existingMeeting.sectorId);
+      setIsCanceled(existingMeeting.canceled || false);
       
       const localStart = new Date(new Date(existingMeeting.startTime).getTime() - tzoffset);
       const localEnd = new Date(new Date(existingMeeting.endTime).getTime() - tzoffset);
@@ -80,6 +81,7 @@ export const MeetingModal: React.FC<MeetingModalProps> = ({ isOpen, onClose, sel
         sectorId,
         startTime: startDateTime.toISOString(),
         endTime: endDateTime.toISOString(),
+        canceled: isCanceled
       };
 
       if (existingMeeting) {
@@ -137,11 +139,6 @@ export const MeetingModal: React.FC<MeetingModalProps> = ({ isOpen, onClose, sel
             <div className="p-6 border-b flex justify-between items-center bg-gray-50">
               <h3 className="text-xl font-bold text-gray-800">{existingMeeting ? 'Editar Reunião' : 'Nova Reunião'}</h3>
               <div className="flex gap-2">
-                {existingMeeting && (
-                  <button type="button" onClick={() => setIsConfirmingDelete(true)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full">
-                    <Trash2 size={24} />
-                  </button>
-                )}
                 <button type="button" onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full">
                   <X size={24} />
                 </button>
@@ -205,6 +202,21 @@ export const MeetingModal: React.FC<MeetingModalProps> = ({ isOpen, onClose, sel
                   />
                 </div>
               </div>
+
+              {existingMeeting && (
+                <div className="flex items-center gap-3 p-4 bg-red-50 rounded-2xl border border-red-100">
+                  <input 
+                    type="checkbox" 
+                    id="cancelar"
+                    checked={isCanceled}
+                    onChange={(e) => setIsCanceled(e.target.checked)}
+                    className="w-6 h-6 text-red-500 rounded-md focus:ring-red-500 cursor-pointer accent-red-500"
+                  />
+                  <label htmlFor="cancelar" className="text-sm font-bold text-red-700 cursor-pointer select-none">
+                    Marcar esta reunião como Cancelada
+                  </label>
+                </div>
+              )}
 
               <button type="submit" disabled={isSaving} className="w-full py-5 bg-primary text-white rounded-2xl font-bold text-xl shadow-lg active:scale-95 disabled:opacity-50">
                 {isSaving ? 'Aguarde...' : (existingMeeting ? 'Salvar Alterações' : 'Confirmar Agendamento')}

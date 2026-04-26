@@ -21,6 +21,14 @@ export const Dashboard: React.FC = () => {
   const currentMonday = getMonday(referenceDate);
   const datePickerRef = useRef<HTMLInputElement>(null);
 
+  const dailyMeetings = meetings
+    .filter((m: any) => {
+      const meetingDate = new Date(m.startTime).toLocaleDateString();
+      const selectedDate = referenceDate.toLocaleDateString();
+      return meetingDate === selectedDate;
+    })
+    .sort((a: any, b: any) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+
   const handleOpenModal = (date?: Date) => {
     setSelectedMeeting(null);
     setSelectedDate(date || new Date());
@@ -86,10 +94,63 @@ export const Dashboard: React.FC = () => {
             <DailyNotes />
           </div>
           
-          <div className="flex-1 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 overflow-y-auto flex flex-col">
-             <h3 className="font-bold text-lg mb-4 text-gray-800">Próximas Reuniões</h3>
-             <div className="flex-1 flex items-center justify-center">
-               <span className="text-sm text-gray-400">Nenhuma reunião agora.</span>
+          <div className="flex-1 bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
+             <div className="flex items-center justify-between mb-4 shrink-0">
+               <h3 className="font-bold text-lg text-gray-800">Reuniões do Dia</h3>
+               <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-lg">
+                 {dailyMeetings.length} {dailyMeetings.length === 1 ? 'total' : 'totais'}
+               </span>
+             </div>
+             
+             <div className="flex-1 overflow-y-auto pr-2 space-y-3 pb-4">
+               {dailyMeetings.length > 0 ? (
+                 dailyMeetings.map((meeting: any) => {
+                   const start = new Date(meeting.startTime);
+                   const end = new Date(meeting.endTime);
+                   const now = new Date();
+                   
+                   const isCanceled = meeting.canceled;
+                   // Só é "Agora" se não estiver cancelada
+                   const isNow = now >= start && now <= end && !isCanceled;
+
+                   const timeString = `${start.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})} às ${end.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}`;
+
+                   return (
+                     <div 
+                        key={meeting.id} 
+                        className={`p-3 sm:p-4 rounded-2xl border transition-all cursor-pointer flex flex-col gap-2 ${
+                          isCanceled 
+                          ? 'bg-gray-50 border-gray-200 opacity-60' 
+                          : isNow 
+                            ? 'bg-primary/5 border-primary/30 ring-1 ring-primary/20' 
+                            : 'bg-white border-gray-100 hover:border-gray-300 shadow-sm'
+                        }`}
+                        onClick={() => handleEditMeeting(meeting)}
+                     >
+                       <div className="flex items-center gap-2">
+                         {/* Bolinha fica cinza se cancelado, senão cor normal (mesmo no passado) */}
+                         <div className="w-3 h-3 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: isCanceled ? '#9CA3AF' : meeting.sector.color }} />
+                         <span className={`font-bold text-sm truncate ${isCanceled ? 'text-gray-500 line-through' : 'text-gray-700'}`}>
+                           {meeting.title}
+                         </span>
+                         {isNow && <span className="ml-auto w-2 h-2 bg-red-500 rounded-full animate-pulse" />}
+                       </div>
+                       <div className="text-xs font-medium text-gray-500 ml-5 flex items-center">
+                         {timeString} 
+                         {isCanceled && <span className="text-red-500 font-bold ml-2 bg-red-50 px-2 py-0.5 rounded-md">• CANCELADA</span>}
+                         {isNow && <span className="text-primary font-bold ml-2 bg-primary/10 px-2 py-0.5 rounded-md">• AGORA</span>}
+                       </div>
+                     </div>
+                   );
+                 })
+               ) : (
+                 <div className="h-full flex flex-col items-center justify-center opacity-50">
+                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                     <CalendarIcon size={32} className="text-gray-400" />
+                   </div>
+                   <span className="text-sm text-gray-500 font-medium">Nenhum agendamento</span>
+                 </div>
+               )}
              </div>
           </div>
 

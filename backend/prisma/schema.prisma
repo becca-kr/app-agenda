@@ -26,6 +26,7 @@ model Meeting {
   endTime     DateTime // Data e hora de término
   sectorId    String
   sector      Sector   @relation(fields: [sectorId], references: [id])
+  canceled    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

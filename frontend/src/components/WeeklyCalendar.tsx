@@ -9,6 +9,7 @@ interface Meeting {
   startTime: string;
   endTime: string;
   sector: { name: string; color: string; };
+  canceled: boolean;
 }
 
 interface WeeklyCalendarProps {
@@ -78,12 +79,16 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ meetings, onCell
                 <div key={day.name} className="border-r last:border-r-0 p-1 relative group">
                   {meeting ? (
                     <div 
-                      style={{ backgroundColor: meeting.sector.color }}
-                      className="w-full h-full rounded-md p-1 sm:p-2 text-white shadow-sm overflow-hidden cursor-pointer active:scale-95 transition-transform flex flex-col justify-center"
+                      style={{ backgroundColor: meeting.canceled ? '#9CA3AF' : meeting.sector.color }}
+                      className={`w-full h-full rounded-md p-1 sm:p-2 text-white shadow-sm overflow-hidden cursor-pointer active:scale-95 transition-transform flex flex-col justify-center ${meeting.canceled ? 'opacity-80' : ''}`}
                       onClick={() => onMeetingClick(meeting)}
                     >
-                      <p className="font-bold text-[8px] sm:text-[10px] uppercase opacity-80 truncate">{meeting.sector.name}</p>
-                      <p className="font-medium text-xs sm:text-sm leading-tight truncate">{meeting.title}</p>
+                      <p className={`font-bold text-[8px] sm:text-[10px] uppercase opacity-80 truncate ${meeting.canceled ? 'line-through' : ''}`}>
+                        {meeting.canceled ? 'CANCELADA' : meeting.sector.name}
+                      </p>
+                      <p className={`font-medium text-xs sm:text-sm leading-tight truncate ${meeting.canceled ? 'line-through' : ''}`}>
+                        {meeting.title}
+                      </p>
                     </div>
                   ) : (
                     <button
