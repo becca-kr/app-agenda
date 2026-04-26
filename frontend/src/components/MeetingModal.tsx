@@ -147,7 +147,7 @@ export const MeetingModal: React.FC<MeetingModalProps> = ({
           
           <div>
             <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2 uppercase">
-              <Tag size={16} className="text-primary" /> Motivo / Nome
+              <Tag size={16} className="text-primary" /> Nome da Reunião
             </label>
             <select 
               value={title} 
@@ -158,7 +158,6 @@ export const MeetingModal: React.FC<MeetingModalProps> = ({
               {meetingTypes.map(type => (
                 <option key={type.id} value={type.name}>{type.name}</option>
               ))}
-              <option value="Outro (Especificar no título)">Outro...</option>
             </select>
           </div>
 
@@ -204,7 +203,9 @@ export const MeetingModal: React.FC<MeetingModalProps> = ({
                 type="date" 
                 value={meetingDate} 
                 onChange={(e) => setMeetingDate(e.target.value)}
-                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none text-sm"
+                onClick={(e) => e.currentTarget.showPicker && e.currentTarget.showPicker()}
+                onKeyDown={(e) => e.preventDefault()}
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none text-sm cursor-pointer select-none"
               />
             </div>
             <div>
@@ -215,7 +216,9 @@ export const MeetingModal: React.FC<MeetingModalProps> = ({
                 type="time" 
                 value={startTime} 
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none text-sm"
+                onClick={(e) => e.currentTarget.showPicker && e.currentTarget.showPicker()}
+                onKeyDown={(e) => e.preventDefault()}
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none text-sm cursor-pointer select-none"
               />
             </div>
             <div>
@@ -226,7 +229,9 @@ export const MeetingModal: React.FC<MeetingModalProps> = ({
                 type="time" 
                 value={endTime} 
                 onChange={(e) => setEndTime(e.target.value)}
-                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none text-sm"
+                onClick={(e) => e.currentTarget.showPicker && e.currentTarget.showPicker()}
+                onKeyDown={(e) => e.preventDefault()}
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none text-sm cursor-pointer select-none"
               />
             </div>
           </div>
