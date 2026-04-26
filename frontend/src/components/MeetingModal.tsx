@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Clock, Tag, MapPin } from 'lucide-react';
+import { X, Clock, Tag, MapPin, Calendar as CalendarIcon } from 'lucide-react';
 import { api } from '../services/api';
 import { toast } from 'react-hot-toast';
 
@@ -12,6 +12,11 @@ interface MeetingModalProps {
   selectedRoomId?: string;
 }
 
+const getLocalDateString = (date: Date) => {
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+};
+
 export const MeetingModal: React.FC<MeetingModalProps> = ({ 
   isOpen, 
   onClose, 
@@ -23,8 +28,11 @@ export const MeetingModal: React.FC<MeetingModalProps> = ({
   const [title, setTitle] = useState('');
   const [sectorId, setSectorId] = useState('');
   const [roomId, setRoomId] = useState('');
+  
+  const [meetingDate, setMeetingDate] = useState('');
   const [startTime, setStartTime] = useState('08:00');
   const [endTime, setEndTime] = useState('09:00');
+  
   const [isCanceled, setIsCanceled] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -49,6 +57,8 @@ export const MeetingModal: React.FC<MeetingModalProps> = ({
       
       const start = new Date(existingMeeting.startTime);
       const end = new Date(existingMeeting.endTime);
+      
+      setMeetingDate(getLocalDateString(start));
       setStartTime(start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
       setEndTime(end.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
     } else {
@@ -56,24 +66,36 @@ export const MeetingModal: React.FC<MeetingModalProps> = ({
       setSectorId('');
       setIsCanceled(false);
       setRoomId(selectedRoomId || '');
-      setStartTime('08:00');
-      setEndTime('09:00');
+      
+      const dateToUse = selectedDate || new Date();
+      setMeetingDate(getLocalDateString(dateToUse));
+      
+      const hours = dateToUse.getHours().toString().padStart(2, '0');
+      const minutes = dateToUse.getMinutes().toString().padStart(2, '0');
+      
+      if (hours === '00' && minutes === '00' && !selectedDate) {
+        setStartTime('08:00');
+        setEndTime('09:00');
+      } else {
+        setStartTime(`${hours}:${minutes}`);
+        const endHour = (dateToUse.getHours() + 1).toString().padStart(2, '0');
+        setEndTime(`${endHour}:${minutes}`);
+      }
     }
-  }, [existingMeeting, selectedRoomId, isOpen]);
+  }, [existingMeeting, selectedDate, selectedRoomId, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !sectorId || !roomId) {
-      toast.error('Preencha o motivo, o setor e selecione a sala!');
+    if (!title || !sectorId || !roomId || !meetingDate) {
+      toast.error('Preencha todos os campos obrigatórios!');
       return;
     }
 
     try {
       setIsSaving(true);
       
-      const datePart = (selectedDate || new Date()).toISOString().split('T')[0];
-      const startISO = new Date(`${datePart}T${startTime}:00`).toISOString();
-      const endISO = new Date(`${datePart}T${endTime}:00`).toISOString();
+      const startISO = new Date(`${meetingDate}T${startTime}:00`).toISOString();
+      const endISO = new Date(`${meetingDate}T${endTime}:00`).toISOString();
 
       const payload = {
         title,
@@ -104,8 +126,14 @@ export const MeetingModal: React.FC<MeetingModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden">
+    <div 
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onMouseDown={onClose}
+    >
+      <div 
+        className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         <header className="px-8 py-6 border-b flex justify-between items-center bg-gray-50/50">
           <h2 className="text-2xl font-bold text-gray-800">
             {existingMeeting ? 'Editar Reunião' : 'Agendar Reunião'}
@@ -117,15 +145,14 @@ export const MeetingModal: React.FC<MeetingModalProps> = ({
 
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
           
-          {/* Nome / Motivo */}
           <div>
             <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2 uppercase">
-              <Tag size={16} className="text-primary" /> Motivo / Nome da Reunião
+              <Tag size={16} className="text-primary" /> Motivo / Nome
             </label>
             <select 
               value={title} 
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+              className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
             >
               <option value="">Selecione um motivo...</option>
               {meetingTypes.map(type => (
@@ -136,7 +163,6 @@ export const MeetingModal: React.FC<MeetingModalProps> = ({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Setor */}
             <div>
               <label className="text-sm font-bold text-gray-700 mb-2 block uppercase">Setor / Tag</label>
               <select 
@@ -151,7 +177,6 @@ export const MeetingModal: React.FC<MeetingModalProps> = ({
               </select>
             </div>
 
-            {/* Sala */}
             <div>
               <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2 uppercase">
                 <MapPin size={16} className="text-primary" /> Sala
@@ -169,8 +194,19 @@ export const MeetingModal: React.FC<MeetingModalProps> = ({
             </div>
           </div>
 
-          {/* Horários */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* NOVOS CAMPOS: DATA, INÍCIO E FIM */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2 uppercase">
+                <CalendarIcon size={16} /> Data
+              </label>
+              <input 
+                type="date" 
+                value={meetingDate} 
+                onChange={(e) => setMeetingDate(e.target.value)}
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none text-sm"
+              />
+            </div>
             <div>
               <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2 uppercase">
                 <Clock size={16} /> Início
@@ -179,7 +215,7 @@ export const MeetingModal: React.FC<MeetingModalProps> = ({
                 type="time" 
                 value={startTime} 
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none"
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none text-sm"
               />
             </div>
             <div>
@@ -190,12 +226,11 @@ export const MeetingModal: React.FC<MeetingModalProps> = ({
                 type="time" 
                 value={endTime} 
                 onChange={(e) => setEndTime(e.target.value)}
-                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none"
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none text-sm"
               />
             </div>
           </div>
 
-          {/* Cancelamento */}
           {existingMeeting && (
             <div className={`p-4 rounded-2xl border transition-colors flex items-center gap-3 ${isCanceled ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-100'}`}>
               <input 
