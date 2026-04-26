@@ -33,6 +33,7 @@ export const Settings: React.FC = () => {
   const [newCadastroName, setNewCadastroName] = useState('');
   const [newSectorColor, setNewSectorColor] = useState('#2196F3');
   const [isAdding, setIsAdding] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
 
   // Listas
   const [sectors, setSectors] = useState<Sector[]>([]);
@@ -85,31 +86,56 @@ export const Settings: React.FC = () => {
     }
   };
 
-  const handleAddCadastro = async (e: React.FormEvent) => {
+  const handleSaveCadastro = async (e: React.FormEvent) => {
     e.preventDefault(); 
-    
     const nameToSave = newCadastroName.trim();
     if (!nameToSave || isAdding) return;
 
     try {
       setIsAdding(true);
-      if (cadastroType === 'sector') {
-        await api.post('/sectors', { name: nameToSave, color: newSectorColor });
+      
+      if (editingItemId) {
+
+        if (cadastroType === 'sector') {
+          await api.put(`/sectors/${editingItemId}`, { name: nameToSave, color: newSectorColor });
+        } else {
+          await api.put(`/meeting-types/${editingItemId}`, { name: nameToSave });
+        }
+        toast.success('Atualizado com sucesso!');
       } else {
-        await api.post('/meeting-types', { name: nameToSave });
+
+        if (cadastroType === 'sector') {
+          await api.post('/sectors', { name: nameToSave, color: newSectorColor });
+        } else {
+          await api.post('/meeting-types', { name: nameToSave });
+        }
+        toast.success('Cadastrado com sucesso!');
       }
       
-      toast.success('Cadastrado com sucesso!');
       setNewCadastroName('');
+      setEditingItemId(null);
       
       if (cadastroType === 'sector') fetchSectors();
       else fetchMeetingTypes();
       
     } catch (error) {
-      toast.error('Erro ao cadastrar');
+      toast.error(editingItemId ? 'Erro ao atualizar' : 'Erro ao cadastrar');
     } finally {
       setIsAdding(false);
     }
+  };
+
+  const handleEditClick = (item: any, type: 'sector' | 'meeting') => {
+    setCadastroType(type);
+    setNewCadastroName(item.name);
+    if (type === 'sector') setNewSectorColor(item.color);
+    setEditingItemId(item.id);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingItemId(null);
+    setNewCadastroName('');
+    setNewSectorColor('#2196F3');
   };
 
   const handleDeleteConfirm = async () => {
@@ -259,15 +285,27 @@ export const Settings: React.FC = () => {
           {activeTab === 'sectors' && (
             <div className="flex flex-col h-full space-y-6 overflow-hidden">
               
-              {/* CARD: ADICIONAR */}
-              <form onSubmit={handleAddCadastro} className="shrink-0 bg-white p-6 md:p-8 rounded-3xl border border-gray-100 shadow-sm">
-                <h2 className="text-xl font-bold text-gray-800 mb-4">Adicionar Novo</h2>
+              {/* CARD: ADICIONAR / EDITAR */}
+              <form onSubmit={handleSaveCadastro} className="shrink-0 bg-white p-6 md:p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden">
+                {editingItemId && <div className="absolute top-0 left-0 w-full h-1 bg-yellow-400" />}
                 
-                <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-end max-w-4xl">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold text-gray-800">
+                    {editingItemId ? 'Editar Cadastro' : 'Adicionar Novo'}
+                  </h2>
+                  {editingItemId && (
+                    <button type="button" onClick={handleCancelEdit} className="text-sm font-bold text-gray-500 hover:text-gray-700">
+                      Cancelar Edição
+                    </button>
+                  )}
+                </div>
+                
+                <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-end max-w-5xl">
                   <div className="w-full lg:w-48">
                     <label className="block text-sm font-bold text-gray-700 mb-2">Tipo</label>
                     <select 
-                      className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-primary cursor-pointer text-gray-700"
+                      disabled={!!editingItemId} 
+                      className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-primary cursor-pointer text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       value={cadastroType}
                       onChange={(e) => setCadastroType(e.target.value as 'sector' | 'meeting')}
                     >
@@ -290,21 +328,26 @@ export const Settings: React.FC = () => {
                   {cadastroType === 'sector' && (
                     <div className="w-full lg:w-auto">
                       <label className="block text-sm font-bold text-gray-700 mb-2">Cor</label>
-                      <input 
-                        type="color" 
-                        value={newSectorColor} 
-                        onChange={(e) => setNewSectorColor(e.target.value)} 
-                        className="h-[58px] w-full lg:w-16 rounded-xl cursor-pointer border-none" 
-                      />
+                      <div 
+                        className="h-[58px] w-full lg:w-16 rounded-xl border border-gray-200 shadow-inner overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity"
+                        style={{ backgroundColor: newSectorColor }}
+                      >
+                        <input 
+                          type="color" 
+                          value={newSectorColor} 
+                          onChange={(e) => setNewSectorColor(e.target.value)} 
+                          className="absolute inset-0 w-[150%] h-[150%] -top-2 -left-2 opacity-0 cursor-pointer" 
+                        />
+                      </div>
                     </div>
                   )}
 
                   <button 
                     type="submit"
                     disabled={isAdding}
-                    className="w-full lg:w-auto h-[58px] bg-green-600 hover:bg-green-700 text-white px-8 rounded-xl font-bold shadow-md active:scale-95 transition-all disabled:opacity-50 mt-4 lg:mt-0"
+                    className={`w-full lg:w-auto h-[58px] text-white px-8 rounded-xl font-bold shadow-md active:scale-95 transition-all disabled:opacity-50 mt-4 lg:mt-0 ${editingItemId ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-green-600 hover:bg-green-700'}`}
                   >
-                    {isAdding ? 'A salvar...' : 'Salvar Cadastro'}
+                    {isAdding ? 'Aguarde...' : (editingItemId ? 'Salvar Alterações' : 'Salvar Cadastro')}
                   </button>
                 </div>
               </form>
@@ -318,16 +361,16 @@ export const Settings: React.FC = () => {
                     <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2 shrink-0">Setores</h3>
                     <div className="flex-1 overflow-y-auto space-y-3 pr-2 pb-4">
                       {sectors.map(sector => (
-                        <div key={sector.id} className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-xl hover:border-gray-200 transition-colors">
+                        <div key={sector.id} className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${editingItemId === sector.id ? 'bg-yellow-50 border-yellow-200' : 'bg-gray-50 border-gray-100 hover:border-gray-200'}`}>
                           <div className="flex items-center gap-3">
                             <div className="w-5 h-5 rounded shadow-sm shrink-0" style={{ backgroundColor: sector.color }} />
                             <span className="font-semibold text-gray-700 truncate">{sector.name}</span>
                           </div>
                           <div className="flex gap-1 shrink-0">
-                            <button onClick={() => toast('Edição em breve!')} className="p-2 text-gray-400 hover:text-primary transition-colors">
+                            <button onClick={() => handleEditClick(sector, 'sector')} className="p-2 text-gray-400 hover:text-yellow-600 transition-colors" title="Editar">
                               <Edit2 size={18} />
                             </button>
-                            <button onClick={() => setItemToDelete({ id: sector.id, type: 'sector', name: sector.name })} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
+                            <button onClick={() => setItemToDelete({ id: sector.id, type: 'sector', name: sector.name })} className="p-2 text-gray-400 hover:text-red-500 transition-colors" title="Excluir">
                               <Trash2 size={18} />
                             </button>
                           </div>
@@ -342,13 +385,13 @@ export const Settings: React.FC = () => {
                     <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2 shrink-0">Nomes de Reunião</h3>
                     <div className="flex-1 overflow-y-auto space-y-3 pr-2 pb-4">
                       {meetingTypes.map(mt => (
-                        <div key={mt.id} className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-xl hover:border-gray-200 transition-colors">
+                        <div key={mt.id} className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${editingItemId === mt.id ? 'bg-yellow-50 border-yellow-200' : 'bg-gray-50 border-gray-100 hover:border-gray-200'}`}>
                           <span className="font-semibold text-gray-700 truncate">{mt.name}</span>
                           <div className="flex gap-1 shrink-0">
-                             <button onClick={() => toast('Edição em breve!')} className="p-2 text-gray-400 hover:text-primary transition-colors">
+                             <button onClick={() => handleEditClick(mt, 'meeting')} className="p-2 text-gray-400 hover:text-yellow-600 transition-colors" title="Editar">
                               <Edit2 size={18} />
                             </button>
-                            <button onClick={() => setItemToDelete({ id: mt.id, type: 'meeting', name: mt.name })} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
+                            <button onClick={() => setItemToDelete({ id: mt.id, type: 'meeting', name: mt.name })} className="p-2 text-gray-400 hover:text-red-500 transition-colors" title="Excluir">
                               <Trash2 size={18} />
                             </button>
                           </div>

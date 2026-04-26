@@ -39,5 +39,26 @@ export const SectorController = {
     } catch (error) {
       return res.status(500).json({ error: 'Erro ao deletar setor (verifique se não há reuniões atreladas a ele)' });
     }
-  }
+  },
+
+  async update(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      if (!id || Array.isArray(id)) {
+        return res.status(400).json({ error: 'ID inválido' });
+      }
+
+      const { name, color } = req.body;
+      const sector = await prisma.sector.update({
+        where: { id },
+        data: { name, color }
+      });
+      return res.json(sector);
+    } catch (error) {
+      return res.status(500).json({ error: 'Erro ao atualizar setor' });
+    }
+  },
+
 };
+

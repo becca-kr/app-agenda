@@ -15,7 +15,9 @@ routes.put('/settings', SettingsController.update);
 // Setores
 routes.get('/sectors', SectorController.list);
 routes.post('/sectors', SectorController.create);
+routes.put('/sectors/:id', SectorController.update);
 routes.delete('/sectors/:id', SectorController.delete);
+
 
 // Reuniões
 routes.get('/meetings', MeetingController.list);
@@ -25,6 +27,7 @@ routes.delete('/meetings/:id', MeetingController.delete);
 
 routes.get('/meeting-types', MeetingTypeController.list);
 routes.post('/meeting-types', MeetingTypeController.create);
+routes.put('/meeting-types/:id', MeetingTypeController.update);
 routes.delete('/meeting-types/:id', MeetingTypeController.delete);
 
 // Notas Diárias

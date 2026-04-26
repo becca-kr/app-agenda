@@ -34,5 +34,24 @@ export const MeetingTypeController = {
     } catch (error) {
       return res.status(500).json({ error: 'Erro ao deletar tipo de reunião' });
     }
-  }
+  },
+
+  async update(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      if (!id || Array.isArray(id)) {
+        return res.status(400).json({ error: 'ID inválido' });
+      }
+
+      const { name } = req.body;
+      const type = await prisma.meetingType.update({
+        where: { id },
+        data: { name }
+      });
+      return res.json(type);
+    } catch (error) {
+      return res.status(500).json({ error: 'Erro ao atualizar tipo de reunião' });
+    }
+  },
 };
