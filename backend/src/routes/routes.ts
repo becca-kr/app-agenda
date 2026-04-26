@@ -27,8 +27,8 @@ routes.post('/meeting-types', MeetingTypeController.create);
 routes.delete('/meeting-types/:id', MeetingTypeController.delete);
 
 // Notas Diárias
-routes.get('/notes', NoteController.getByDate);
-routes.post('/notes', NoteController.save);
+routes.get('/notes', NoteController.get);
+routes.post('/notes', NoteController.upsert);
 
 // Autenticação
 routes.post('/login', AuthController.login);

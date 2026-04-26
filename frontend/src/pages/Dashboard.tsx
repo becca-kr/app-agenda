@@ -91,7 +91,7 @@ export const Dashboard: React.FC = () => {
         {/* COLUNA ESQUERDA */}
         <div className="order-2 lg:order-1 w-full lg:w-[350px] flex flex-col gap-4 lg:gap-6 shrink-0 h-[600px] lg:h-full">
           <div className="flex-1 lg:h-1/2">
-            <DailyNotes />
+            <DailyNotes date={referenceDate} />
           </div>
           
           <div className="flex-1 bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
@@ -208,8 +208,24 @@ export const Dashboard: React.FC = () => {
       </main>
 
       {/* FOOTER */}
-      <footer className="p-2 lg:p-4 text-center text-gray-400 text-xs lg:text-sm border-t bg-white shrink-0">
-        {footerText}
+      <footer className="p-3 lg:p-4 text-center border-t bg-white shrink-0 flex flex-col items-center justify-center gap-1">
+        {/* Texto personalizável pelo cliente */}
+        <span className="text-gray-400 text-xs lg:text-sm">
+          {footerText}
+        </span>
+        
+        {/* Assinatura estática */}
+        <span className="text-[10px] sm:text-xs text-gray-300">
+          Desenvolvido por{' '}
+          <a 
+            href="https://www.instagram.com/allbec.tech/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="font-bold hover:text-primary transition-colors"
+          >
+            AllBec
+          </a>
+        </span>
       </footer>
 
       {/* MODAL */}

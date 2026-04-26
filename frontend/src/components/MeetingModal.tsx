@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { toast } from 'react-hot-toast';
-import { X, Trash2, AlertTriangle } from 'lucide-react';
+import { X, AlertTriangle } from 'lucide-react';
 
 interface Sector { id: string; name: string; color: string; }
 interface MeetingType { id: string; name: string; }
