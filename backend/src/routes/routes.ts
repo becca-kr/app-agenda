@@ -1,15 +1,16 @@
 import { Router } from 'express';
-import { getSettings } from '../controllers/SettingsController.js';
 import { MeetingController } from '../controllers/MeetingController.js';
 import { NoteController } from '../controllers/NoteController.js';
 import { AuthController } from '../controllers/AuthController.js';
 import { SectorController } from '../controllers/SectorController.js';
 import { MeetingTypeController } from '../controllers/MeetingTypeController.js';
+import { SettingsController } from '../controllers/SettingsController.js';
 
 const routes = Router();
 
 // Configurações
-routes.get('/settings', getSettings);
+routes.get('/settings', SettingsController.get);
+routes.put('/settings', SettingsController.update);
 
 // Setores
 routes.get('/sectors', SectorController.list);

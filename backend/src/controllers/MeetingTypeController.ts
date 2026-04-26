@@ -23,8 +23,13 @@ export const MeetingTypeController = {
 
   async delete(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id;
+      if (!id || Array.isArray(id)) {
+        return res.status(400).json({ error: 'ID inválido' });
+      }
+
       await prisma.meetingType.delete({ where: { id } });
+      
       return res.status(204).send();
     } catch (error) {
       return res.status(500).json({ error: 'Erro ao deletar tipo de reunião' });

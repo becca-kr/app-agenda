@@ -75,10 +75,13 @@ export const Settings: React.FC = () => {
   const handleSaveAppearance = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setIsAdding(true);
       await api.put('/settings', { primaryColor: color, footerText: footer, companyLogo: logo });
       toast.success('Aparência salva! Reinicie para aplicar totalmente.');
     } catch (error) {
       toast.error('Erro ao salvar');
+    } finally {
+      setIsAdding(false);
     }
   };
 
@@ -161,37 +164,89 @@ export const Settings: React.FC = () => {
           
           {/* ABA 1: APARÊNCIA */}
           {activeTab === 'appearance' && (
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 lg:p-10 grid grid-cols-1 lg:grid-cols-12 gap-10 overflow-y-auto">
-              <form onSubmit={handleSaveAppearance} className="col-span-1 lg:col-span-7 space-y-8">
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 lg:p-10 flex flex-col lg:flex-row gap-10 overflow-y-auto">
+              {/* O formulário usa flex-1 para ocupar o espaço que sobrar */}
+              <form onSubmit={handleSaveAppearance} className="flex-1 space-y-8 min-w-0">
                 <h2 className="text-xl font-bold text-gray-800 border-b pb-4">Identidade Visual</h2>
                 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Cor Primária</label>
-                  <div className="flex gap-4 items-center">
-                    <input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="h-14 w-20 rounded-lg cursor-pointer border-none shadow-sm" />
-                    <input type="text" value={color} onChange={(e) => setColor(e.target.value)} className="flex-1 p-4 bg-gray-50 rounded-xl outline-none font-mono border border-gray-100 focus:border-primary" />
+                  <label className="block text-sm font-bold text-gray-700 mb-3 uppercase tracking-wide">Cor Primária</label>
+                  <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+                    <div className="flex gap-2">
+                      {['#0057FF', '#10B981', '#8B5CF6', '#F43F5E', '#0F172A'].map(preset => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setColor(preset)}
+                          className={`w-10 h-10 rounded-full shadow-sm border-2 transition-transform hover:scale-110 shrink-0 ${color === preset ? 'border-gray-800 scale-110' : 'border-transparent'}`}
+                          style={{ backgroundColor: preset }}
+                        />
+                      ))}
+                    </div>
+                    <span className="hidden sm:block text-gray-300">ou</span>
+                    <div className="flex flex-1 gap-2 items-center">
+                      <input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="h-10 w-14 rounded-lg cursor-pointer border-none shadow-sm shrink-0" />
+                      <input type="text" value={color} onChange={(e) => setColor(e.target.value)} className="w-full p-2 bg-gray-50 rounded-xl outline-none font-mono border border-gray-100 focus:border-primary text-center uppercase" />
+                    </div>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">URL da Logo</label>
-                  <input type="text" value={logo} onChange={(e) => setLogo(e.target.value)} className="w-full p-4 bg-gray-50 rounded-xl outline-none border border-gray-100 focus:border-primary" placeholder="Link da imagem ou base64" />
-                </div>
-
-                <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Texto do Rodapé</label>
-                  <input type="text" value={footer} onChange={(e) => setFooter(e.target.value)} className="w-full p-4 bg-gray-50 rounded-xl outline-none border border-gray-100 focus:border-primary" placeholder="Ex: © 2026 Minha Empresa" />
+                  <input type="text" value={footer} onChange={(e) => setFooter(e.target.value)} className="w-full p-4 bg-gray-50 rounded-xl outline-none border border-gray-100 focus:border-primary text-gray-700" placeholder="Ex: © 2026 Minha Empresa" />
                 </div>
 
-                <button type="submit" style={{ backgroundColor: color }} className="w-full py-4 text-white rounded-2xl font-bold text-xl flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all">
-                  <Save size={24} /> Salvar Aparência
+                <button 
+                  type="submit" 
+                  disabled={isAdding}
+                  style={{ backgroundColor: color }} 
+                  className="w-full py-4 text-white rounded-2xl font-bold text-xl flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all disabled:opacity-70"
+                >
+                  <Save size={24} /> {isAdding ? 'Salvando...' : 'Salvar Aparência'}
                 </button>
               </form>
 
-              <div className="col-span-1 lg:col-span-5 space-y-6">
-                <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 flex flex-col items-center justify-center h-48">
-                  <h3 className="font-bold text-gray-400 mb-4 uppercase text-xs">Prévia da Logo</h3>
-                  {logo ? <img src={logo} alt="Preview" className="h-16 object-contain" /> : <Upload size={32} className="text-gray-300" />}
+              <div className="w-full lg:w-80 shrink-0 space-y-6">
+                <div className="flex flex-col h-full">
+                  <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Logo da Empresa</label>
+                  
+                  <div className="flex-1 relative bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200 hover:border-primary hover:bg-blue-50/50 transition-colors group flex flex-col items-center justify-center p-6 min-h-[240px] overflow-hidden">
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => setLogo(reader.result as string);
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                    
+                    {logo ? (
+                      <div className="flex flex-col items-center gap-4 w-full">
+                        <img src={logo} alt="Preview" className="max-h-24 max-w-full object-contain z-0" />
+                        <span className="text-xs font-bold text-gray-400 uppercase group-hover:text-primary transition-colors text-center">Clique para trocar</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-3 text-gray-400 group-hover:text-primary transition-colors">
+                        <Upload size={32} />
+                        <span className="text-sm font-bold text-center">Clique ou arraste<br/>sua logo aqui</span>
+                        <span className="text-xs opacity-70">PNG, JPG ou SVG</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {logo && (
+                    <button 
+                      onClick={() => setLogo('')}
+                      className="mt-4 text-sm text-red-500 font-bold hover:underline self-center w-full text-center"
+                    >
+                      Remover Imagem
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
