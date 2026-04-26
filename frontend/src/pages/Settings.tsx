@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useConfig } from '../context/ConfigContext';
 import { api } from '../services/api';
 import { toast } from 'react-hot-toast';
-import { Save, ArrowLeft, Upload, Trash2, Palette, Tags, Edit2, History, FileSpreadsheet, Search } from 'lucide-react';
+import { Save, ArrowLeft, Upload, Trash2, Palette, Tags, Edit2, History, FileSpreadsheet, Search, CheckSquare, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface Sector {
@@ -22,6 +22,15 @@ const removeAcentos = (str: string) => {
 
 export const Settings: React.FC = () => {
   const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem('token'); 
+    localStorage.removeItem('user');
+    
+    toast.success('Sessão encerrada com sucesso!');
+    navigate('/login');
+  };
+
   const { primaryColor: globalColor, logoUrl: globalLogo, footerText: globalFooter } = useConfig();
   
   // Controle de Abas
@@ -240,12 +249,24 @@ export const Settings: React.FC = () => {
   return (
     <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
       
-      {/* Header Fixo */}
-      <header className="bg-white px-8 py-6 shadow-sm flex items-center gap-4 shrink-0 z-10">
-        <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-full transition-all">
-          <ArrowLeft size={24} className="text-gray-600" />
+      {/* CABEÇALHO */}
+      <header className="bg-white px-8 py-6 shadow-sm flex justify-between items-center shrink-0 z-10">
+        <div className="flex items-center gap-4">
+          <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-full transition-all">
+            <ArrowLeft size={24} className="text-gray-600" />
+          </button>
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-800">Painel de Configurações</h1>
+        </div>
+
+        {/* BOTÃO DE LOGOUT */}
+        <button 
+          onClick={handleLogout}
+          className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-50 rounded-xl font-bold transition-colors active:scale-95"
+          title="Sair do Sistema"
+        >
+          <LogOut size={20} />
+          <span className="hidden sm:inline">Sair da Conta</span>
         </button>
-        <h1 className="text-2xl lg:text-3xl font-bold text-gray-800">Painel de Configurações</h1>
       </header>
 
       {/* Conteúdo Central */}
