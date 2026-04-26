@@ -37,47 +37,50 @@ export const Login: React.FC = () => {
   };
 
   return (
+    // MUDANÇA: Usamos flex e garantimos que o container ocupe toda a tela
     <div className="flex h-screen w-full overflow-hidden bg-white">
-      {/* Esquerda: Imagem do Produto */}
-      <div className="hidden lg:flex w-1/2 bg-gray-100 items-center justify-center">
+      
+      {/* Esquerda: Imagem do Produto (Oculta em MD, MD-Vertical e menor, visível em LG e computadores grandes) */}
+      <div className="hidden lg:flex w-1/2 bg-gray-100 items-center justify-center overflow-hidden">
+        {/* Você pode tentar o caminho absoluto: src="/login-product.png" se tiver colocado a imagem na pasta public, ou o import padrão: */}
         <img 
           src="/src/assets/login-product.png"
-          alt="Produto" 
+          alt="Ambiente Sala de Reunião" 
           className="w-full h-full object-cover"
         />
       </div>
 
       {/* Direita: Formulário */}
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-8">
-        <div className="w-full max-w-md space-y-8">
-          <div className="flex flex-col items-center">
+      <div className="flex-1 flex flex-col items-center justify-center p-8 bg-white min-w-0">
+        <div className="w-full max-w-md space-y-10 scale-[0.9] sm:scale-100">
+          
+          <div className="flex flex-col items-center text-center">
             {logoUrl ? (
-              <img src={logoUrl} alt="Logo Empresa" className="h-20 mb-6" />
+              <img src={logoUrl} alt="Logo Empresa" className="h-16 mb-6 object-contain" />
             ) : (
-              <div className="h-20 w-20 bg-gray-200 rounded-full mb-6 flex items-center justify-center">
-                <span className="text-xs text-gray-400">Sua Logo</span>
+              <div className="h-20 w-20 bg-gray-200 rounded-full mb-6 flex items-center justify-center border border-gray-100">
+                <span className="text-xs text-gray-400 font-medium">Sua Logo</span>
               </div>
             )}
-            <h2 className="text-3xl font-bold text-gray-800">Bem-vindo</h2>
-            <p className="text-gray-500">Acesse para gerenciar a sala</p>
+            <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">Acesso à Sala</h2>
+            <p className="text-gray-500 mt-2 text-lg">Gerencie o painel da sua sala de reunião</p>
           </div>
 
-          {/* O formulário agora chama o handleLogin */}
           <form onSubmit={handleLogin} className="mt-8 space-y-6">
             <div className="space-y-4">
               <input
                 type="email"
-                placeholder="E-mail"
+                placeholder="Seu e-mail corporativo"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary outline-none transition-all text-lg"
+                className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary outline-none transition-all text-lg shadow-inner bg-gray-50 focus:bg-white"
               />
               <input
                 type="password"
-                placeholder="Senha"
+                placeholder="Sua senha secreta"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary outline-none transition-all text-lg"
+                className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary outline-none transition-all text-lg shadow-inner bg-gray-50 focus:bg-white"
               />
             </div>
 
@@ -85,9 +88,9 @@ export const Login: React.FC = () => {
               type="submit"
               disabled={isLoading}
               style={{ backgroundColor: primaryColor }}
-              className="w-full text-white p-4 rounded-xl font-bold text-xl active:scale-95 transition-transform shadow-lg disabled:opacity-70"
+              className="w-full text-white p-5 rounded-2xl font-bold text-xl active:scale-95 transition-transform shadow-lg shadow-primary/30 disabled:opacity-70 hover:brightness-110"
             >
-              {isLoading ? 'Entrando...' : 'Entrar'}
+              {isLoading ? 'Aguarde...' : 'Entrar na Sala'}
             </button>
           </form>
         </div>
