@@ -19,16 +19,23 @@ model User {
 
 // As Reuniões
 model Meeting {
-  id          String   @id @default(uuid())
-  title       String   // Nome da reunião
-  description String?  // Notas/Descrição
-  startTime   DateTime // Data e hora de início
-  endTime     DateTime // Data e hora de término
-  sectorId    String
-  sector      Sector   @relation(fields: [sectorId], references: [id])
-  canceled    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  title     String
+  startTime DateTime
+  endTime   DateTime
+  
+  sectorId  String
+  sector    Sector   @relation(fields: [sectorId], references: [id])
+  
+  roomId    String 
+  room      Room     @relation(fields: [roomId], references: [id]) 
+
+  meetingTypeId String?
+  meetingType   MeetingType? @relation(fields: [meetingTypeId], references: [id])
+  
+  canceled  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // Setores/Tags de cores (Configurações)
@@ -59,6 +66,15 @@ model DailyNote {
 model MeetingType {
   id        String   @id @default(uuid())
   name      String
+  meetings  Meeting[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Room {
+  id        String    @id @default(uuid())
+  name      String
+  meetings  Meeting[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }

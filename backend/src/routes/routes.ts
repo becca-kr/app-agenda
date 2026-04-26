@@ -5,6 +5,7 @@ import { AuthController } from '../controllers/AuthController.js';
 import { SectorController } from '../controllers/SectorController.js';
 import { MeetingTypeController } from '../controllers/MeetingTypeController.js';
 import { SettingsController } from '../controllers/SettingsController.js';
+import { RoomController } from '../controllers/RoomController.js';
 
 const routes = Router();
 
@@ -33,6 +34,12 @@ routes.delete('/meeting-types/:id', MeetingTypeController.delete);
 // Notas Diárias
 routes.get('/notes', NoteController.get);
 routes.post('/notes', NoteController.upsert);
+
+// Salas
+routes.get('/rooms', RoomController.list);
+routes.post('/rooms', RoomController.create);
+routes.put('/rooms/:id', RoomController.update);
+routes.delete('/rooms/:id', RoomController.delete);
 
 // Autenticação
 routes.post('/login', AuthController.login);

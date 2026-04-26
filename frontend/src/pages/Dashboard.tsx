@@ -3,7 +3,7 @@ import { useConfig } from '../context/ConfigContext';
 import { DailyNotes } from '../components/DailyNotes';
 import { WeeklyCalendar } from '../components/WeeklyCalendar';
 import { MeetingModal } from '../components/MeetingModal';
-import { Plus, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Settings as SettingsIcon } from 'lucide-react';
+import { Plus, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Settings as SettingsIcon, ChevronDown } from 'lucide-react';
 import { getMonday, formatDateTitle } from '../utils/dateUtils';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
@@ -16,6 +16,8 @@ export const Dashboard: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedMeeting, setSelectedMeeting] = useState<any>(null);
   const [meetings, setMeetings] = useState([]);
+  const [rooms, setRooms] = useState<any[]>([]);
+  const [selectedRoom, setSelectedRoom] = useState<any>(null);
   
   const [referenceDate, setReferenceDate] = useState(new Date());
   const currentMonday = getMonday(referenceDate);
@@ -41,12 +43,14 @@ export const Dashboard: React.FC = () => {
   };
 
   const fetchMeetings = async () => {
+    if (!selectedRoom) return; 
+
     const start = currentMonday.toISOString();
     const end = new Date(currentMonday);
     end.setDate(end.getDate() + 6);
 
     try {
-      const response = await api.get(`/meetings?start=${start}&end=${end.toISOString()}`);
+      const response = await api.get(`/meetings?start=${start}&end=${end.toISOString()}&roomId=${selectedRoom.id}`);
       setMeetings(response.data);
     } catch (error) {
       console.error("Erro ao buscar reuniões", error);
@@ -54,8 +58,18 @@ export const Dashboard: React.FC = () => {
   };
 
   useEffect(() => {
+    api.get('/rooms').then(res => {
+      setRooms(res.data);
+      if (res.data.length > 0) {
+        setSelectedRoom(res.data[0]); 
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    setMeetings([]);
     fetchMeetings();
-  }, [referenceDate]);
+  }, [referenceDate, selectedRoom]);
 
   const navigateWeek = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentMonday);
@@ -72,15 +86,43 @@ export const Dashboard: React.FC = () => {
       {/* HEADER */}
       <header className="bg-white px-4 lg:px-8 py-4 shadow-sm flex justify-between items-center shrink-0">
         <img src={logoUrl || ''} alt="Logo" className="h-8 lg:h-10 object-contain" />
-        <div className="flex items-center gap-4">
-            <span className="hidden sm:block text-gray-500 font-medium">Sala Principal</span>
-            <button 
-              onClick={() => navigate('/settings')} 
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              title="Configurações"
-            >
-              <SettingsIcon size={24} className="text-gray-500" />
+        
+        <div className="flex items-center gap-4 lg:gap-6">
+          
+          {/* Seletor de Salas Dinâmico */}
+          <div className="relative group">
+            <button className="flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
+              <span className="text-sm font-bold text-gray-700">
+                {selectedRoom?.name || 'Carregando sala...'}
+              </span>
+              <ChevronDown size={16} className="text-gray-400" />
             </button>
+            
+            {/* Dropdown de Salas */}
+            <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden">
+              {rooms.length > 0 ? (
+                rooms.map(room => (
+                  <button 
+                    key={room.id}
+                    onClick={() => setSelectedRoom(room)}
+                    className={`w-full text-left px-4 py-3 text-sm font-medium hover:bg-primary/5 transition-colors ${selectedRoom?.id === room.id ? 'text-primary bg-primary/5' : 'text-gray-600'}`}
+                  >
+                    {room.name}
+                  </button>
+                ))
+              ) : (
+                <div className="px-4 py-3 text-sm text-gray-400 text-center">Nenhuma sala</div>
+              )}
+            </div>
+          </div>
+
+          <button 
+            onClick={() => navigate('/settings')} 
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            title="Configurações"
+          >
+            <SettingsIcon size={24} className="text-gray-500" />
+          </button>
         </div>
       </header>
 
@@ -109,7 +151,6 @@ export const Dashboard: React.FC = () => {
                    const now = new Date();
                    
                    const isCanceled = meeting.canceled;
-                   // Só é "Agora" se não estiver cancelada
                    const isNow = now >= start && now <= end && !isCanceled;
 
                    const timeString = `${start.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})} às ${end.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}`;
@@ -127,7 +168,6 @@ export const Dashboard: React.FC = () => {
                         onClick={() => handleEditMeeting(meeting)}
                      >
                        <div className="flex items-center gap-2">
-                         {/* Bolinha fica cinza se cancelado, senão cor normal (mesmo no passado) */}
                          <div className="w-3 h-3 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: isCanceled ? '#9CA3AF' : meeting.sector.color }} />
                          <span className={`font-bold text-sm truncate ${isCanceled ? 'text-gray-500 line-through' : 'text-gray-700'}`}>
                            {meeting.title}
@@ -166,7 +206,6 @@ export const Dashboard: React.FC = () => {
         {/* COLUNA DIREITA (Agenda Semanal) */}
         <div className="order-1 lg:order-2 flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col overflow-hidden min-h-[600px] lg:min-h-0">
           
-          {/* Cabeçalho da Agenda com Navegação */}
           <div className="p-4 lg:p-6 border-b flex justify-between items-center shrink-0 bg-white">
             <div 
               className="relative flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded-lg transition-colors group"
@@ -194,7 +233,6 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Grid do Calendário */}
           <div className="flex-1 p-2 lg:p-4 bg-gray-50/50 flex flex-col overflow-hidden">
             <WeeklyCalendar 
               meetings={meetings} 
@@ -208,20 +246,10 @@ export const Dashboard: React.FC = () => {
 
       {/* FOOTER */}
       <footer className="p-3 lg:p-4 text-center border-t bg-white shrink-0 flex flex-col items-center justify-center gap-1">
-        {/* Texto personalizável pelo cliente */}
-        <span className="text-gray-400 text-xs lg:text-sm">
-          {footerText}
-        </span>
-        
-        {/* Assinatura estática */}
+        <span className="text-gray-400 text-xs lg:text-sm">{footerText}</span>
         <span className="text-[10px] sm:text-xs text-gray-300">
           Desenvolvido por{' '}
-          <a 
-            href="https://www.instagram.com/allbec.tech/" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="font-bold hover:text-primary transition-colors"
-          >
+          <a href="https://www.instagram.com/allbec.tech/" target="_blank" rel="noopener noreferrer" className="font-bold hover:text-primary transition-colors">
             AllBec
           </a>
         </span>
@@ -234,6 +262,7 @@ export const Dashboard: React.FC = () => {
         selectedDate={selectedDate}
         existingMeeting={selectedMeeting}
         onSuccess={fetchMeetings}
+        selectedRoomId={selectedRoom?.id} 
       />
     </div>
   );
