@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useConfig } from '../context/ConfigContext';
 import { api } from '../services/api';
 import { toast } from 'react-hot-toast';
-import { Save, ArrowLeft, Upload, Trash2, Palette, Tags, Edit2 } from 'lucide-react';
+import { Save, ArrowLeft, Upload, Trash2, Palette, Tags, Edit2, History, FileSpreadsheet, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface Sector {
@@ -16,30 +16,39 @@ interface MeetingType {
   name: string;
 }
 
+const removeAcentos = (str: string) => {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+};
+
 export const Settings: React.FC = () => {
   const navigate = useNavigate();
   const { primaryColor: globalColor, logoUrl: globalLogo, footerText: globalFooter } = useConfig();
   
   // Controle de Abas
-  const [activeTab, setActiveTab] = useState<'appearance' | 'sectors'>('appearance');
+  const [activeTab, setActiveTab] = useState<'appearance' | 'sectors' | 'history'>('appearance');
 
-  // Estados da Aba 1 (Aparência)
+  // Estados - Aparência
   const [color, setColor] = useState(globalColor);
   const [footer, setFooter] = useState(globalFooter);
   const [logo, setLogo] = useState(globalLogo || '');
 
-  // Estados da Aba 2 (Cadastros)
+  // Estados - Cadastros
   const [cadastroType, setCadastroType] = useState<'sector' | 'meeting'>('sector');
   const [newCadastroName, setNewCadastroName] = useState('');
   const [newSectorColor, setNewSectorColor] = useState('#2196F3');
   const [isAdding, setIsAdding] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
 
-  // Listas
+  // Estados - Listas
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [meetingTypes, setMeetingTypes] = useState<MeetingType[]>([]);
 
-  // Controle de Exclusão
+  // Estados - Histórico
+  const [historyMeetings, setHistoryMeetings] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedMeetings, setSelectedMeetings] = useState<string[]>([]);
+
+  // Estados - Controle de Exclusão
   const [itemToDelete, setItemToDelete] = useState<{id: string, type: 'sector' | 'meeting', name: string} | null>(null);
 
   useEffect(() => {
@@ -52,6 +61,8 @@ export const Settings: React.FC = () => {
     if (activeTab === 'sectors') {
       fetchSectors();
       fetchMeetingTypes();
+    } else if (activeTab === 'history') {
+      fetchHistory();
     }
   }, [activeTab]);
 
@@ -70,6 +81,16 @@ export const Settings: React.FC = () => {
       setMeetingTypes(response.data);
     } catch (error) {
       toast.error('Erro ao carregar nomes de reunião');
+    }
+  };
+
+  const fetchHistory = async () => {
+    try { 
+      const response = await api.get('/meetings');
+      const sorted = response.data.sort((a: any, b: any) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+      setHistoryMeetings(sorted); 
+    } catch (error) { 
+      toast.error('Erro ao carregar histórico'); 
     }
   };
 
@@ -155,6 +176,67 @@ export const Settings: React.FC = () => {
     }
   };
 
+  const filteredHistory = historyMeetings.filter(meeting => {
+    const searchNorm = removeAcentos(searchQuery);
+    const data = new Date(meeting.startTime).toLocaleDateString('pt-BR');
+    const status = meeting.canceled ? 'cancelada' : 'confirmada';
+    
+    return (
+      removeAcentos(meeting.title).includes(searchNorm) ||
+      removeAcentos(meeting.sector.name).includes(searchNorm) ||
+      data.includes(searchNorm) ||
+      status.includes(searchNorm)
+    );
+  });
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedMeetings(prev => 
+      prev.includes(id) ? prev.filter(mId => mId !== id) : [...prev, id]
+    );
+  };
+
+  const handleToggleSelectAll = () => {
+    const allFilteredIds = filteredHistory.map(m => m.id);
+    const allSelected = allFilteredIds.every(id => selectedMeetings.includes(id));
+
+    if (allSelected) {
+      setSelectedMeetings(prev => prev.filter(id => !allFilteredIds.includes(id)));
+    } else {
+      const newSelected = new Set([...selectedMeetings, ...allFilteredIds]);
+      setSelectedMeetings(Array.from(newSelected));
+    }
+  };
+
+  const handleExportCSV = () => {
+    const toExport = selectedMeetings.length > 0 
+      ? historyMeetings.filter(m => selectedMeetings.includes(m.id))
+      : filteredHistory;
+
+    if (toExport.length === 0) return toast.error('Não há dados para exportar.');
+    
+    const headers = ['Data', 'Início', 'Fim', 'Reunião', 'Setor', 'Status'];
+    const csvRows = [headers.join(',')];
+
+    toExport.forEach(meeting => {
+      const data = new Date(meeting.startTime).toLocaleDateString('pt-BR');
+      const inicio = new Date(meeting.startTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      const fim = new Date(meeting.endTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      const status = meeting.canceled ? 'Cancelada' : 'Confirmada';
+      csvRows.push(`${data},${inicio},${fim},"${meeting.title}","${meeting.sector.name}",${status}`);
+    });
+
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `historico_reunioes_${new Date().toLocaleDateString('pt-BR')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Download concluído!');
+    setSelectedMeetings([]);
+  };
+
   return (
     <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
       
@@ -170,18 +252,15 @@ export const Settings: React.FC = () => {
       <div className="flex-1 max-w-6xl w-full mx-auto p-4 lg:p-8 flex flex-col lg:flex-row gap-8 overflow-hidden">
         
         {/* Menu Lateral Fixo */}
-        <aside className="w-full lg:w-64 shrink-0 flex flex-row lg:flex-col gap-2">
-          <button 
-            onClick={() => setActiveTab('appearance')}
-            className={`flex items-center gap-3 p-4 rounded-xl font-bold transition-all flex-1 lg:flex-none ${activeTab === 'appearance' ? 'bg-white text-primary shadow-sm border border-gray-100' : 'text-gray-500 hover:bg-gray-200/50'}`}
-          >
+        <aside className="w-full lg:w-64 shrink-0 flex flex-row lg:flex-col gap-2 overflow-x-auto no-scrollbar">
+          <button onClick={() => setActiveTab('appearance')} className={`flex items-center gap-3 p-4 rounded-xl font-bold transition-all shrink-0 ${activeTab === 'appearance' ? 'bg-white text-primary shadow-sm border border-gray-100' : 'text-gray-500 hover:bg-gray-200/50'}`}>
             <Palette size={20} /> <span className="hidden sm:inline">Aparência</span>
           </button>
-          <button 
-            onClick={() => setActiveTab('sectors')}
-            className={`flex items-center gap-3 p-4 rounded-xl font-bold transition-all flex-1 lg:flex-none ${activeTab === 'sectors' ? 'bg-white text-primary shadow-sm border border-gray-100' : 'text-gray-500 hover:bg-gray-200/50'}`}
-          >
+          <button onClick={() => setActiveTab('sectors')} className={`flex items-center gap-3 p-4 rounded-xl font-bold transition-all shrink-0 ${activeTab === 'sectors' ? 'bg-white text-primary shadow-sm border border-gray-100' : 'text-gray-500 hover:bg-gray-200/50'}`}>
             <Tags size={20} /> <span className="hidden sm:inline">Setores / Tags</span>
+          </button>
+          <button onClick={() => setActiveTab('history')} className={`flex items-center gap-3 p-4 rounded-xl font-bold transition-all shrink-0 ${activeTab === 'history' ? 'bg-white text-primary shadow-sm border border-gray-100' : 'text-gray-500 hover:bg-gray-200/50'}`}>
+            <History size={20} /> <span className="hidden sm:inline">Histórico</span>
           </button>
         </aside>
 
@@ -404,6 +483,105 @@ export const Settings: React.FC = () => {
                 </div>
               </div>
 
+            </div>
+          )}
+
+          {/* ABA 3: HISTÓRICO DE REUNIÕES */}
+          {activeTab === 'history' && (
+            <div className="flex flex-col h-full bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+              
+              <div className="p-6 md:p-8 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0 bg-gray-50/50">
+                <div className="relative w-full sm:w-[28rem]">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Search size={20} className="text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Buscar (ex: expedicao, diretoria)..."
+                    className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-primary shadow-sm text-sm"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+
+                <button 
+                  onClick={handleExportCSV}
+                  className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold shadow-md active:scale-95 transition-all w-full sm:w-auto justify-center"
+                >
+                  <FileSpreadsheet size={20} /> 
+                  {selectedMeetings.length > 0 ? `Baixar Selecionados (${selectedMeetings.length})` : 'Baixar Todos Filtrados'}
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6 md:p-8">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b-2 border-gray-100">
+                      <th className="pb-4 w-10">
+                        <input 
+                          type="checkbox" 
+                          className="w-5 h-5 rounded border-gray-300 cursor-pointer accent-primary"
+                          checked={filteredHistory.length > 0 && filteredHistory.every(m => selectedMeetings.includes(m.id))}
+                          onChange={handleToggleSelectAll}
+                        />
+                      </th>
+                      <th className="pb-4 text-sm font-bold text-gray-400 uppercase tracking-wider hidden sm:table-cell">Data</th>
+                      <th className="pb-4 text-sm font-bold text-gray-400 uppercase tracking-wider hidden md:table-cell">Horário</th>
+                      <th className="pb-4 text-sm font-bold text-gray-400 uppercase tracking-wider">Nome da Reunião</th>
+                      <th className="pb-4 text-sm font-bold text-gray-400 uppercase tracking-wider">Setor</th>
+                      <th className="pb-4 text-sm font-bold text-gray-400 uppercase tracking-wider text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {filteredHistory.map((meeting) => (
+                      <tr key={meeting.id} className="hover:bg-gray-50/80 transition-colors group">
+                        <td className="py-4">
+                          <input 
+                            type="checkbox" 
+                            className="w-5 h-5 rounded border-gray-300 cursor-pointer accent-primary"
+                            checked={selectedMeetings.includes(meeting.id)}
+                            onChange={() => handleToggleSelect(meeting.id)}
+                          />
+                        </td>
+                        <td className="py-4 text-sm font-semibold text-gray-600 hidden sm:table-cell whitespace-nowrap">
+                          {new Date(meeting.startTime).toLocaleDateString('pt-BR')}
+                        </td>
+                        <td className="py-4 text-sm text-gray-500 hidden md:table-cell whitespace-nowrap">
+                          {new Date(meeting.startTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                        <td className="py-4 text-sm font-bold text-gray-800">
+                          {meeting.title}
+                          {/* Em telas muito pequenas, a data aparece embaixo do nome */}
+                          <div className="sm:hidden text-xs text-gray-400 mt-1">
+                             {new Date(meeting.startTime).toLocaleDateString('pt-BR')} • {new Date(meeting.startTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </td>
+                        <td className="py-4">
+                          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap" style={{ backgroundColor: meeting.sector.color + '15', color: meeting.sector.color }}>
+                            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: meeting.sector.color }} />
+                            <span className="truncate max-w-[100px] lg:max-w-none">{meeting.sector.name}</span>
+                          </span>
+                        </td>
+                        <td className="py-4 text-right whitespace-nowrap">
+                          {meeting.canceled ? (
+                            <span className="text-xs font-bold text-red-600 bg-red-50 px-3 py-1 rounded-full">Cancelada</span>
+                          ) : (
+                            <span className="text-xs font-bold text-green-600 bg-green-50 px-3 py-1 rounded-full">Confirmada</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                
+                {filteredHistory.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                    <History size={48} className="mb-4 opacity-30" />
+                    <p className="text-lg font-bold text-gray-500">Nenhum registro encontrado</p>
+                    <p className="text-sm">Tente ajustar os termos da sua busca.</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </main>
