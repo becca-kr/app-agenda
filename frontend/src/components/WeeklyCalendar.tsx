@@ -14,10 +14,11 @@ interface Meeting {
 interface WeeklyCalendarProps {
   meetings: Meeting[];
   onCellClick: (date: Date) => void;
-  currentMonday: Date; 
+  onMeetingClick: (meeting: Meeting) => void;
+  currentMonday: Date;
 }
 
-export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ meetings, onCellClick, currentMonday }) => {
+export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ meetings, onCellClick, onMeetingClick, currentMonday }) => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
   useEffect(() => {
@@ -36,8 +37,14 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ meetings, onCell
 
   const getMeetingAt = (dayIndex: number, hour: number) => {
     return meetings.find(m => {
-      const date = new Date(m.startTime);
-      return date.getDay() === (dayIndex + 1) && date.getHours() === hour;
+      const start = new Date(m.startTime);
+      const end = new Date(m.endTime);
+      
+      const cellTime = new Date(currentMonday);
+      cellTime.setDate(cellTime.getDate() + dayIndex);
+      cellTime.setHours(hour, 0, 0, 0);
+
+      return cellTime.getTime() >= start.getTime() && cellTime.getTime() < end.getTime();
     });
   };
 
@@ -73,7 +80,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ meetings, onCell
                     <div 
                       style={{ backgroundColor: meeting.sector.color }}
                       className="w-full h-full rounded-md p-1 sm:p-2 text-white shadow-sm overflow-hidden cursor-pointer active:scale-95 transition-transform flex flex-col justify-center"
-                      onClick={() => alert(`Editar: ${meeting.title}`)}
+                      onClick={() => onMeetingClick(meeting)}
                     >
                       <p className="font-bold text-[8px] sm:text-[10px] uppercase opacity-80 truncate">{meeting.sector.name}</p>
                       <p className="font-medium text-xs sm:text-sm leading-tight truncate">{meeting.title}</p>

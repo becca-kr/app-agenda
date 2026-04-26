@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useConfig } from '../context/ConfigContext';
 import { DailyNotes } from '../components/DailyNotes';
 import { WeeklyCalendar } from '../components/WeeklyCalendar';
@@ -14,13 +14,21 @@ export const Dashboard: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [selectedMeeting, setSelectedMeeting] = useState<any>(null);
   const [meetings, setMeetings] = useState([]);
   
   const [referenceDate, setReferenceDate] = useState(new Date());
   const currentMonday = getMonday(referenceDate);
+  const datePickerRef = useRef<HTMLInputElement>(null);
 
   const handleOpenModal = (date?: Date) => {
+    setSelectedMeeting(null);
     setSelectedDate(date || new Date());
+    setIsModalOpen(true);
+  };
+
+  const handleEditMeeting = (meeting: any) => {
+    setSelectedMeeting(meeting);
     setIsModalOpen(true);
   };
 
@@ -42,8 +50,9 @@ export const Dashboard: React.FC = () => {
   }, [referenceDate]);
 
   const navigateWeek = (direction: 'prev' | 'next') => {
-    const newDate = new Date(referenceDate);
+    const newDate = new Date(currentMonday);
     newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
+    newDate.setHours(12, 0, 0, 0);
     setReferenceDate(newDate);
   };
 
@@ -99,33 +108,29 @@ export const Dashboard: React.FC = () => {
           
           {/* Cabeçalho da Agenda com Navegação */}
           <div className="p-4 lg:p-6 border-b flex justify-between items-center shrink-0 bg-white">
-            <div className="flex flex-col">
-              <h3 className="font-bold text-lg lg:text-xl flex items-center gap-2 text-gray-800">
-                <CalendarIcon className="text-primary" />
-                {formatDateTitle(currentMonday)}
+            <div 
+              className="relative flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded-lg transition-colors group"
+              onClick={() => datePickerRef.current?.showPicker()}
+            >
+              <CalendarIcon className="text-primary" />
+              <h3 className="font-bold text-lg lg:text-xl text-gray-800 select-none">
+                {formatDateTitle(referenceDate)}
               </h3>
-              <span className="text-xs text-gray-400 ml-7">Semana de {currentMonday.getFullYear()}</span>
+              
+              <input 
+                type="date" 
+                ref={datePickerRef}
+                className="absolute w-0 h-0 opacity-0 pointer-events-none"
+                onChange={(e) => {
+                  if(e.target.value) setReferenceDate(new Date(e.target.value + 'T12:00:00'));
+                }}
+              />
             </div>
 
             <div className="flex items-center gap-1 sm:gap-2 bg-gray-100 p-1 rounded-lg">
-              <button 
-                onClick={() => navigateWeek('prev')} 
-                className="p-1 hover:bg-white rounded transition-all text-gray-600 hover:text-gray-900 shadow-sm"
-              >
-                <ChevronLeft size={20}/>
-              </button>
-              <button 
-                onClick={goToToday} 
-                className="px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold uppercase hover:bg-white rounded transition-all text-gray-600 hover:text-gray-900 shadow-sm"
-              >
-                Hoje
-              </button>
-              <button 
-                onClick={() => navigateWeek('next')} 
-                className="p-1 hover:bg-white rounded transition-all text-gray-600 hover:text-gray-900 shadow-sm"
-              >
-                <ChevronRight size={20}/>
-              </button>
+              <button onClick={() => navigateWeek('prev')} className="p-1 hover:bg-white rounded transition-all text-gray-600 shadow-sm"><ChevronLeft size={20}/></button>
+              <button onClick={goToToday} className="px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold uppercase hover:bg-white rounded transition-all text-gray-600 shadow-sm">Hoje</button>
+              <button onClick={() => navigateWeek('next')} className="p-1 hover:bg-white rounded transition-all text-gray-600 shadow-sm"><ChevronRight size={20}/></button>
             </div>
           </div>
 
@@ -133,7 +138,8 @@ export const Dashboard: React.FC = () => {
           <div className="flex-1 p-2 lg:p-4 bg-gray-50/50 flex flex-col overflow-hidden">
             <WeeklyCalendar 
               meetings={meetings} 
-              onCellClick={handleOpenModal} 
+              onCellClick={handleOpenModal}
+              onMeetingClick={handleEditMeeting} 
               currentMonday={currentMonday} 
             />
           </div>
@@ -150,6 +156,7 @@ export const Dashboard: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         selectedDate={selectedDate}
+        existingMeeting={selectedMeeting}
         onSuccess={fetchMeetings}
       />
     </div>
