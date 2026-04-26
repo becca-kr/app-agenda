@@ -81,7 +81,6 @@ export const Dashboard: React.FC = () => {
             >
               <SettingsIcon size={24} className="text-gray-500" />
             </button>
-            <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-gray-200 border-2 border-white shadow-sm" />
         </div>
       </header>
 

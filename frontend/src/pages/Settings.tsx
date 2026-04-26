@@ -170,23 +170,26 @@ export const Settings: React.FC = () => {
                 <h2 className="text-xl font-bold text-gray-800 border-b pb-4">Identidade Visual</h2>
                 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-3 uppercase tracking-wide">Cor Primária</label>
-                  <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
-                    <div className="flex gap-2">
+                  <label className="block text-sm font-bold text-gray-700 mb-4 uppercase tracking-wide">Cor Primária</label>
+                  
+                  <div className="flex flex-col gap-5">
+                    <div className="flex gap-3">
                       {['#0057FF', '#10B981', '#8B5CF6', '#F43F5E', '#0F172A'].map(preset => (
                         <button
                           key={preset}
                           type="button"
                           onClick={() => setColor(preset)}
-                          className={`w-10 h-10 rounded-full shadow-sm border-2 transition-transform hover:scale-110 shrink-0 ${color === preset ? 'border-gray-800 scale-110' : 'border-transparent'}`}
+                          className={`w-12 h-12 rounded-full shadow-sm border-2 transition-transform hover:scale-110 shrink-0 ${color === preset ? 'border-gray-800 scale-110' : 'border-transparent'}`}
                           style={{ backgroundColor: preset }}
                         />
                       ))}
                     </div>
-                    <span className="hidden sm:block text-gray-300">ou</span>
-                    <div className="flex flex-1 gap-2 items-center">
-                      <input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="h-10 w-14 rounded-lg cursor-pointer border-none shadow-sm shrink-0" />
-                      <input type="text" value={color} onChange={(e) => setColor(e.target.value)} className="w-full p-2 bg-gray-50 rounded-xl outline-none font-mono border border-gray-100 focus:border-primary text-center uppercase" />
+                    <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-2xl border border-gray-100 w-full sm:w-max">
+                      <span className="text-xs font-bold text-gray-400 uppercase ml-2">Ou personalize:</span>
+                      <div className="flex gap-2 items-center ml-2">
+                        <input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="h-10 w-10 rounded-lg cursor-pointer border-none shadow-sm shrink-0" />
+                        <input type="text" value={color} onChange={(e) => setColor(e.target.value)} className="w-28 p-2 bg-white rounded-xl outline-none font-mono border border-gray-200 focus:border-primary text-center uppercase text-sm font-bold text-gray-700" />
+                      </div>
                     </div>
                   </div>
                 </div>
