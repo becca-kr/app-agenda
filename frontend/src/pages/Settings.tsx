@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useConfig } from '../context/ConfigContext';
 import { api } from '../services/api';
 import { toast } from 'react-hot-toast';
-import { Save, ArrowLeft, Upload, Trash2, Palette, Tags, Edit2, History, FileSpreadsheet, Search, CheckSquare, LogOut } from 'lucide-react';
+import { Save, ArrowLeft, Upload, Trash2, Palette, Tags, Edit2, History, FileSpreadsheet, Search, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface Sector {
@@ -24,11 +24,11 @@ export const Settings: React.FC = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem('token'); 
+    localStorage.removeItem('@AgendaToken'); 
     localStorage.removeItem('user');
     
     toast.success('Sessão encerrada com sucesso!');
-    navigate('/login');
+    navigate('/');
   };
 
   const { primaryColor: globalColor, logoUrl: globalLogo, footerText: globalFooter } = useConfig();
